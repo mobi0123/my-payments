@@ -8,13 +8,13 @@
 <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7"/></filter>
 <clipPath id="round"><rect width="512" height="512" rx="108"/></clipPath></defs>
 <g clip-path="url(#round)"><rect width="512" height="512" fill="url(#bg)"/><path d="M-40 115Q240-35 530 55" fill="none" stroke="#19caff" stroke-opacity=".16" stroke-width="28"/><path d="M-30 530Q270 390 550 435" fill="none" stroke="#06ecb0" stroke-opacity=".18" stroke-width="55"/>
-<g opacity=".48" filter="url(#shadow)"><rect x="75" y="91" width="166" height="203" rx="20" fill="#00caff"/><rect x="271" y="91" width="166" height="94" rx="20" fill="#24ff90"/><rect x="75" y="319" width="166" height="94" rx="20" fill="#db40ff"/><rect x="271" y="210" width="166" height="203" rx="20" fill="#ffb526"/></g>
+<g opacity=".48" filter="url(#shadow)"><rect x="75" y="91" width="166" height="203" rx="20" fill="#00caff"/><rect x="271" y="91" width="166" height="124" rx="20" fill="#24ff90"/><rect x="75" y="345" width="166" height="90" rx="20" fill="#db40ff"/><rect x="271" y="266" width="166" height="169" rx="20" fill="#ffb526"/></g>
 <rect x="75" y="91" width="166" height="203" rx="19" fill="url(#b)" stroke="#71faff" stroke-width="3"/>
-<rect x="271" y="91" width="166" height="94" rx="19" fill="url(#g)" stroke="#9bffcc" stroke-width="3"/>
-<rect x="75" y="319" width="166" height="94" rx="19" fill="url(#p)" stroke="#e6aaff" stroke-width="3"/>
-<rect x="271" y="210" width="166" height="203" rx="19" fill="url(#o)" stroke="#ffea76" stroke-width="3"/>
+<rect x="271" y="91" width="166" height="124" rx="19" fill="url(#g)" stroke="#9bffcc" stroke-width="3"/>
+<rect x="75" y="345" width="166" height="90" rx="19" fill="url(#p)" stroke="#e6aaff" stroke-width="3"/>
+<rect x="271" y="266" width="166" height="169" rx="19" fill="url(#o)" stroke="#ffea76" stroke-width="3"/>
 <path d="M76 233Q167 227 240 151V111Q240 93 221 93H95Q77 93 77 111Z" fill="url(#shine)" opacity=".45"/>
-<path d="M273 155Q353 162 435 105Q435 93 418 93H291Q273 93 273 111Z" fill="url(#shine)" opacity=".32"/>
-<path d="M77 375Q162 367 239 340V337Q239 321 220 321H95Q77 321 77 339Z" fill="url(#shine)" opacity=".38"/>
-<path d="M273 359Q352 350 435 267V229Q435 212 418 212H291Q273 212 273 230Z" fill="url(#shine)" opacity=".4"/>
+<path d="M273 178Q353 184 435 105Q435 93 418 93H291Q273 93 273 111Z" fill="url(#shine)" opacity=".32"/>
+<path d="M77 399Q162 390 239 365V363Q239 347 220 347H95Q77 347 77 365Z" fill="url(#shine)" opacity=".38"/>
+<path d="M273 385Q352 375 435 314V285Q435 268 418 268H291Q273 268 273 286Z" fill="url(#shine)" opacity=".4"/>
 </g></svg>
