@@ -8,9 +8,9 @@
 <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#FFFFFF" stop-opacity=".65"/><stop offset=".4" stop-color="#FFFFFF" stop-opacity=".08"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
 <filter id="glow"><feGaussianBlur stdDeviation="9"/></filter>
 </defs><rect width="512" height="512" fill="url(#base)"/>
-<rect x="5" y="5" width="502" height="502" rx="102" fill="none" stroke="url(#rim)" stroke-width="10"/>
 
-<g opacity=".5" filter="url(#glow)"><path d="M79 116H243V211H79Z" fill="#05CBFF"/><path d="M270 116H431V329H270Z" fill="#31F0A2"/><path d="M79 237H243V430H79Z" fill="#B145FF"/><path d="M270 354H431V430H270Z" fill="#FFB627"/></g>
+
+<g transform="translate(256 236) scale(1.15) translate(-256 -256)"><g opacity=".5" filter="url(#glow)"><path d="M79 116H243V211H79Z" fill="#05CBFF"/><path d="M270 116H431V329H270Z" fill="#31F0A2"/><path d="M79 237H243V430H79Z" fill="#B145FF"/><path d="M270 354H431V430H270Z" fill="#FFB627"/></g>
 <!-- Four tiles: only outer corners rounded, inner corners sharp. -->
 <path d="M108 115H244V214H78V145Q78 115 108 115Z" fill="url(#blue)" stroke="#9CEEFF" stroke-width="2.5"/>
 <path d="M270 115H401Q433 115 433 147V332H270Z" fill="url(#green)" stroke="#7AFFA6" stroke-width="2.5"/>
@@ -21,4 +21,4 @@
 <path d="M80 241H242V277Q155 253 80 305Z" fill="url(#shine)" opacity=".35"/>
 <path d="M272 359H431V390Q351 369 272 405Z" fill="url(#shine)" opacity=".35"/>
 <path d="M85 205Q156 218 240 187M274 310Q346 272 425 195M85 420Q165 365 240 341M275 422Q354 425 426 378" stroke="#FFFFFF" stroke-opacity=".24" stroke-width="5" fill="none" stroke-linecap="round"/>
-</svg>
+</g></svg>
