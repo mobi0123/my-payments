@@ -1,7 +1,48 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ARC Receipt Lab</title><style>body{font:16px system-ui;background:#f4f6fa;color:#1c293d;max-width:700px;margin:auto;padding:18px}section{background:white;border-radius:18px;padding:18px;margin:14px 0}button{background:#25344a;color:white;border:0;border-radius:12px;padding:12px;font:inherit}textarea{width:100%;height:140px;box-sizing:border-box}img{max-width:100%;max-height:260px}table{width:100%;font-size:13px;border-collapse:collapse}td,th{border-bottom:1px solid #ddd;padding:7px;text-align:left}small{color:#68788e}</style></head><body><h2>ARC · Receipt Lab</h2><p>Независимый тестовый сканер. Данные не отправляются в ARC.</p><section><input type="file" accept="image/*" capture="environment" id="photo"><p><img id="preview"></p><button id="scan">Сканировать чек</button> <span id="status"></span></section><section><h3>Текст чека</h3><textarea id="raw" placeholder="Результат OCR или вставленный текст"></textarea><p><button id="parse">Разобрать</button> <button id="export">Сохранить JSON</button></p></section><section id="result">Ожидается чек</section><script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script>
 const el=id=>document.getElementById(id);let parsed=null;
 el('photo').onchange=()=>{const f=el('photo').files[0];if(f)el('preview').src=URL.createObjectURL(f)};
-el('scan').onclick=async()=>{const f=el('photo').files[0];if(!f)return alert('Выбери фото');el('scan').disabled=true;let w;try{if(!window.Tesseract)throw Error('OCR не загрузился');el('status').textContent='Распознавание';w=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text')el('status').textContent=Math.round(m.progress*100)+'%'}});const r=await w.recognize(f);el('raw').value=r.data.text;render()}catch(e){el('status').textContent='Ошибка: '+e.message}finally{if(w)await w.terminate();el('scan').disabled=false}};
+async function prepareReceipt(file){
+ const bitmap=await createImageBitmap(file);
+ const w=bitmap.width,h=bitmap.height;
+ // Wide source photos: center strip contains the paper; preserve native resolution.
+ const cropW=w>h*0.65?Math.round(w*0.48):w;
+ const cropX=Math.round((w-cropW)/2);
+ const slices=[];
+ for(let i=0;i<3;i++){
+  const y=Math.round(h*i/3),top=Math.max(0,y-Math.round(h*0.025));
+  const bottom=Math.min(h,Math.round(h*(i+1)/3+h*0.025));
+  const c=document.createElement('canvas');c.width=Math.min(2200,cropW*2);c.height=Math.round((bottom-top)*c.width/cropW);
+  const ctx=c.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(bitmap,cropX,top,cropW,bottom-top,0,0,c.width,c.height);
+  const pixels=ctx.getImageData(0,0,c.width,c.height);
+  for(let p=0;p<pixels.data.length;p+=4){
+   const v=0.299*pixels.data[p]+0.587*pixels.data[p+1]+0.114*pixels.data[p+2];
+   const boosted=Math.max(0,Math.min(255,(v-120)*1.7+145));
+   pixels.data[p]=pixels.data[p+1]=pixels.data[p+2]=boosted;
+  }
+  ctx.putImageData(pixels,0,0);slices.push(c);
+ }
+ bitmap.close();return slices;
+}
+el('scan').onclick=async()=>{
+ const f=el('photo').files[0];if(!f)return alert('Выбери фото');
+ el('scan').disabled=true;let worker;
+ try{
+  if(!window.Tesseract)throw Error('OCR не загрузился');
+  el('status').textContent='Подготовка изображения';
+  const slices=await prepareReceipt(f);
+  worker=await Tesseract.createWorker('eng');
+  await worker.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});
+  const texts=[];
+  for(let i=0;i<slices.length;i++){
+   el('status').textContent='Часть '+(i+1)+' из '+slices.length;
+   const r=await worker.recognize(slices[i]);texts.push(r.data.text);
+  }
+  el('raw').value=texts.join(String.fromCharCode(10));
+  el('status').textContent='Готово · 3 части';render();
+ }catch(e){el('status').textContent='Ошибка: '+e.message}
+ finally{if(worker)await worker.terminate();el('scan').disabled=false}
+};
 const rules=[[/purina|dog food|cat food/i,'Животные'],[/mr.? clean|detergent|bleach/i,'Бытовая химия'],[/hersh|choc|brownie|cinnamon|candy/i,'Сладости'],[/water|sftdk|cran|juice/i,'Напитки'],[/avocado|cucumber|tomato|watermelon/i,'Овощи и фрукты'],[/milk|sour cream|yogurt/i,'Молочные продукты'],[/farmer john|sausage/i,'Мясные продукты'],[/recycl|bag charge/i,'Сборы']];
 function analyze(raw){let store=null,date=null,total=null,tax=null,items=[];for(const line0 of raw.split(String.fromCharCode(10))){const line=line0.trim();if(/\bVONS\b/i.test(line))store='Vons';if(/CIRCLE\s*K/i.test(line))store='Circle K';const dm=line.match(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/);if(dm)date=dm[0];const nums=[...line.matchAll(/-?\d{1,5}[.,]\d{2}\b/g)].map(x=>Number(x[0].replace(',','.')));if(/^\*{0,4}\s*BALANCE/i.test(line)&&nums.length)total=nums.at(-1);if(/^TAX\s+(?!EXEMPTION)/i.test(line)&&nums.length)tax=nums.at(-1);if(/^TAX EXEMPTION/i.test(line)&&nums.length)tax=(tax||0)+nums.at(-1);if(/^(MEMBER SAVINGS|TAX|BALANCE|ACH|CHANGE|TOTAL|YOUR SAVINGS|GROCERY|GROC NONEDIBLE|MISCELLANEOUS|REFRIG|PRODUCE|DELI|MEAT|BAKED GOODS|GEN MERCHANDISE|PRICE|YOU PAY|STORE|MAIN|CASHIER|WT\b)/i.test(line))continue;const m=line.match(/^(?:\d{4,14}\s+)?(.{3,}?)\s+(\d{1,5}[.,]\d{2})\s+(\d{1,5}[.,]\d{2})(?:\s+[ST])?$/i);if(!m)continue;const name=m[1].trim(),original=Number(m[2].replace(',','.')),price=Number(m[3].replace(',','.'));items.push({name,original,price,discount:Math.max(0,original-price),category:rules.find(r=>r[0].test(name))?.[1]||'Не определено'})}const sum=items.reduce((a,b)=>a+b.price,0);return {store,date,total,tax,items,sum:Number(sum.toFixed(2)),balanced:total!==null&&tax!==null&&Math.abs(sum+tax-total)<.02}}
 function render(){parsed=analyze(el('raw').value);const root=el('result');root.replaceChildren();const h=document.createElement('h3');h.textContent=(parsed.store||'Магазин не найден')+' · '+(parsed.date||'Дата не найдена');root.append(h);const p=document.createElement('p');p.textContent='Итог: '+(parsed.total??'не найден')+' · Налог: '+(parsed.tax??'не найден')+' · Позиций: '+parsed.items.length+' · Сумма строк: $'+parsed.sum.toFixed(2);root.append(p);const status=document.createElement('p');status.textContent=parsed.balanced?'Суммы сходятся':'Суммы не подтверждены — проверь OCR, скидки и пропущенные товары';root.append(status);const table=document.createElement('table');for(const item of parsed.items){const tr=document.createElement('tr');for(const v of [item.name,item.category,'$'+item.price.toFixed(2)]){const td=document.createElement('td');td.textContent=v;tr.append(td)}table.append(tr)}root.append(table)}
