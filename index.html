@@ -165,15 +165,19 @@ const receiptButton=document.getElementById('receipt-scan-btn');
 const receiptInput=document.getElementById('receipt-photo');
 const receiptStatus=document.getElementById('receipt-status');
 let receiptOCRPromise;
-function receiptParseMoney(line){const m=String(line).match(/(?:\\$\\s*)?(\\d{1,5}[.,]\\d{2})\\s*$/);return m?Number(m[1].replace(',','.')):null}
+function receiptParseMoney(line){
+ const matches=[...String(line).replace(/[,](?=\d{3}\b)/g,'').matchAll(/\$?\s*(\d{1,6}[.,]\d{2})\b/g)];
+ if(!matches.length)return null;
+ return Number(matches.at(-1)[1].replace(',','.'));
+}
 function receiptExtract(raw){
- const text=String(raw),lines=text.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean);
- const get=(regex)=>lines.filter(x=>regex.test(x)).map(receiptParseMoney).filter(x=>x!==null);
- const tax=get(/\\b(?:sales\\s*tax|tax)\\b/i).at(-1)??0;
- const subtotal=get(/\\b(?:sub[ -]?total)\\b/i).at(-1);
- const total=get(/\\b(?:grand\\s*total|total|amount\\s*due|amount\\s*paid)\\b/i).filter(x=>x>0).at(-1);
- const amount=subtotal??(total!==undefined?Math.round((total-tax)*100)/100:null);
- const m=text.match(/\\b(0?[1-9]|1[0-2])[\\/.-](0?[1-9]|[12]\\d|3[01])[\\/.-](20\\d{2}|\\d{2})\\b/);
+ const text=String(raw),lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+ const find=(re)=>lines.flatMap((line,i)=>re.test(line)?[receiptParseMoney(line)??receiptParseMoney(lines[i+1]||'')]:[]).filter(x=>Number.isFinite(x));
+ const tax=find(/\b(?:sales\s*tax|tax\s*[0-9.%]*|tax:)\b/i).at(-1)??null;
+ const subtotal=find(/\b(?:sub[\s-]?total)\b/i).at(-1);
+ const total=find(/\b(?:grand\s*total|total|amount\s*(?:due|paid)|balance\s*due)\b/i).at(-1);
+ const amount=subtotal??(total!=null?Math.round((total-(tax??0))*100)/100:null);
+ const m=text.match(/\b(0?[1-9]|1[0-2])[\/.-](0?[1-9]|[12]\d|3[01])[\/.-](20\d{2}|\d{2})\b/);
  const date=m?(m[3].length===2?'20'+m[3]:m[3])+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0'):null;
  const shop=['Circle K','ARCO','Vons','Stater Bros.','Grocery Outlet'].find(n=>text.toLowerCase().includes(n.toLowerCase()))||'';
  return {shop,amount,tax,date,total};
@@ -197,13 +201,18 @@ receiptInput.addEventListener('change',async()=>{
   const T=await receiptOCR();
   worker=await T.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text')receiptStatus.textContent='Распознавание: '+Math.round(m.progress*100)+'%'}});
   const result=await worker.recognize(file),d=receiptExtract(result.data.text);
-  if(!Number.isFinite(d.amount)||d.amount<=0)throw new Error('Сумму не удалось распознать. Введи расход вручную.');
   openExpense(d.shop,['Circle K','ARCO'].includes(d.shop)?'Топливо':'Продукты');
-  el('expense-amount').value=d.amount.toFixed(2);
-  el('expense-tax').value=d.tax.toFixed(2);
+  if(Number.isFinite(d.amount)&&d.amount>0)el('expense-amount').value=d.amount.toFixed(2);
+  if(d.tax!==null)el('expense-tax').value=d.tax.toFixed(2);
   if(d.date)el('expense-date').value=d.date;
   updateExpensePreview();
-  receiptStatus.textContent='Проверь магазин, сумму, налог и дату перед сохранением.';
+  receiptStatus.textContent=d.amount>0?'Черновик готов. Проверь все поля перед сохранением.':'Текст прочитан, но сумма не определена. Заполни её вручную.';
+  const existing=document.getElementById('receipt-ocr-text');if(existing)existing.remove();
+  const details=document.createElement('details');details.id='receipt-ocr-text';
+  const summary=document.createElement('summary');summary.textContent='Показать распознанный текст чека';
+  const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:220px;overflow:auto';
+  pre.textContent=result.data.text||'Текст не распознан';details.append(summary,pre);
+  document.getElementById('expense-form').append(details);
  }catch(e){receiptStatus.textContent='Сканирование не удалось: '+e.message}
  finally{if(worker)try{await worker.terminate()}catch{}receiptButton.disabled=false;receiptInput.value=''}
 });
