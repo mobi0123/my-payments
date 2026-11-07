@@ -1,1 +1,1 @@
-{"name":"Arc by Arkhara Lab","short_name":"Arc","start_url":"./","scope":"./","display":"standalone","background_color":"#F6F8FC","theme_color":"#FFFFFF","icons":[{"src":"./arc-icon.svg?v=6.8","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
+{"name":"Arc by Arkhara Lab","short_name":"Arc","start_url":"./","scope":"./","display":"standalone","background_color":"#0b1220","theme_color":"#101827","icons":[{"src":"./arc-emblem.webp?v=4.2","sizes":"128x128","type":"image/webp","purpose":"any"}]}
